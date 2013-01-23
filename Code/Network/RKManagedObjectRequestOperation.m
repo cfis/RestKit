@@ -320,7 +320,13 @@ static NSURL *RKRelativeURLFromURLAndResponseDescriptors(NSURL *URL, NSArray *re
     [super setTargetObject:targetObject];
 
     if ([targetObject isKindOfClass:[NSManagedObject class]]) {
-        self.targetObjectID = [targetObject objectID];
+        NSManagedObjectID *objectId = [targetObject objectID];
+        if ([objectId isTemporaryID]) {
+            NSError *error = nil;
+            [[targetObject managedObjectContext] obtainPermanentIDsForObjects:@[targetObject] error:&error];
+            objectId = [targetObject objectID];
+        }
+        self.targetObjectID = objectId;
     } else {
         self.targetObjectID = nil;
     }
