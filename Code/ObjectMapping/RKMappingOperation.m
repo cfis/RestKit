@@ -1065,6 +1065,7 @@ static NSArray *RKInsertInMetadataList(NSArray *list, id metadata1, id metadata2
         if (relationshipClass && !mappingToCollection && RKObjectIsCollection(value)) {
             RKLogDebug(@"Asked to map a collection into a has-one relationship. Transforming to an instance of: %@", NSStringFromClass(relationshipClass));
             value = [value lastObject];
+            objectIsCollection = NO;
             if (value == nil) {
                 if (! self.objectMapping.assignsNilForMissingRelationships) continue;
                 [self setRelationshipToNil:relationshipMapping];
