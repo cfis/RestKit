@@ -819,6 +819,7 @@ BOOL RKDoesArrayOfResponseDescriptorsContainOnlyEntityMappings(NSArray *response
 - (BOOL)saveContext:(NSError **)error
 {
     if (self.willSaveMappingContextBlock) {
+        self.mappingResult = _responseMapperOperation.mappingResult;
         [self.privateContext performBlockAndWait:^{
             self.willSaveMappingContextBlock(self.privateContext);
         }];
@@ -850,7 +851,7 @@ BOOL RKDoesArrayOfResponseDescriptorsContainOnlyEntityMappings(NSArray *response
     [self.privateContext performBlockAndWait:^{
         NSArray *insertedObjects = [[self.privateContext insertedObjects] allObjects];
         RKLogDebug(@"Obtaining permanent ID's for %ld managed objects", (unsigned long) [insertedObjects count]);
-        _blockSuccess = [self.privateContext obtainPermanentIDsForObjects:insertedObjects error:nil];
+        _blockSuccess = [self.privateContext obtainPermanentIDsForObjects:insertedObjects error:&localError];
     }];
     if (!_blockSuccess && error) *error = localError;
 
