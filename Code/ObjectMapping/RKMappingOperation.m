@@ -1099,8 +1099,8 @@ static NSArray *RKInsertInMetadataList(NSArray *list, id metadata1, id metadata2
 - (void)setRelationshipToNil:(RKRelationshipMapping *)relationshipMapping
 {
     Class relationshipClass = [self.objectMapping classForKeyPath:relationshipMapping.destinationKeyPath];
-    RKAssignmentPolicy assignmentPolicy = relationshipMapping.assignmentPolicy;
     BOOL mappingToCollection = RKClassIsCollection(relationshipClass);
+    RKAssignmentPolicy assignmentPolicy = relationshipMapping.assignmentPolicy;
     if (assignmentPolicy == RKUnionAssignmentPolicy && mappingToCollection) {
         // Unioning `nil` with the existing value is functionally equivalent to doing nothing, so just continue
         return;
