@@ -158,6 +158,14 @@ static NSArray *RKInsertInMetadataList(NSArray *list, id metadata1, id metadata2
 
 @implementation RKMetadataWrapper
 
+- (instancetype)init
+{
+    @throw [NSException exceptionWithName:NSInternalInconsistencyException
+                                   reason:[NSString stringWithFormat:@"-init is not a valid initializer for the class %@, use designated initilizer -initWithMappingSource:", NSStringFromClass([self class])]
+                                 userInfo:nil];
+    return [self init];
+}
+
 - (instancetype)initWithMappingSource:(RKMappingSourceObject *)source {
     if (self = [super init]) {
         self.mappingSource = source;
@@ -1221,18 +1229,34 @@ static NSArray *RKInsertInMetadataList(NSArray *list, id metadata1, id metadata2
         }
     }
     
-    BOOL canSkipMapping = [dataSource respondsToSelector:@selector(mappingOperationShouldSkipPropertyMapping:)] && [dataSource mappingOperationShouldSkipPropertyMapping:self];
-    if (! canSkipMapping) {
-        [self applyNestedMappings];
-        if ([self isCancelled]) return;
-        BOOL mappedSimpleAttributes = [self applyAttributeMappings:[self simpleAttributeMappings]];
-        if ([self isCancelled]) return;
-        BOOL mappedRelationships = [[self relationshipMappings] count] ? [self applyRelationshipMappings] : NO;
-        if ([self isCancelled]) return;
-        // NOTE: We map key path attributes last to allow you to map across the object graphs for objects created/updated by the relationship mappings
-        BOOL mappedKeyPathAttributes = [self applyAttributeMappings:[self keyPathAttributeMappings]];
-        
-        if (!mappedSimpleAttributes && !mappedRelationships && !mappedKeyPathAttributes) {
+    BOOL canSkipProperties = [dataSource respondsToSelector:@selector(mappingOperationShouldSkipPropertyMapping:)] && [dataSource mappingOperationShouldSkipPropertyMapping:self];
+    BOOL canSkipAttributes = canSkipProperties;
+    BOOL canSkipRelationships = canSkipProperties;
+    if ([dataSource respondsToSelector:@selector(mappingOperationShouldSkipRelationshipMapping:)]) {
+        canSkipRelationships = [dataSource mappingOperationShouldSkipRelationshipMapping:self];
+    }
+    if ([dataSource respondsToSelector:@selector(mappingOperationShouldSkipAttributeMapping:)]) {
+        canSkipAttributes = [dataSource mappingOperationShouldSkipAttributeMapping:self];
+    }
+    if (!canSkipRelationships || !canSkipAttributes) {
+        BOOL foundNoSimpleAttributes = NO;
+        BOOL foundNoRelationships = NO;
+        BOOL foundNoKeyPathAttributes = NO;
+        if (!canSkipAttributes) {
+            [self applyNestedMappings];
+            if ([self isCancelled]) return;
+            foundNoSimpleAttributes = ![self applyAttributeMappings:[self simpleAttributeMappings]];
+        }
+        if (!canSkipRelationships) {
+            if ([self isCancelled]) return;
+            foundNoRelationships = [[self relationshipMappings] count] ? ![self applyRelationshipMappings] : YES;
+        }
+        if (!canSkipAttributes) {
+            if ([self isCancelled]) return;
+            // NOTE: We map key path attributes last to allow you to map across the object graphs for objects created/updated by the relationship mappings
+            foundNoKeyPathAttributes = ![self applyAttributeMappings:[self keyPathAttributeMappings]];
+        }
+        if (foundNoSimpleAttributes && foundNoRelationships && foundNoKeyPathAttributes) {
             // We did not find anything to do
             RKLogDebug(@"Mapping operation did not find any mappable values for the attribute and relationship mappings in the given object representation");
             NSDictionary *userInfo = @{ NSLocalizedDescriptionKey: @"No mappable values found for any of the attributes or relationship mappings" };
