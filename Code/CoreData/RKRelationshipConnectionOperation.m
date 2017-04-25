@@ -178,6 +178,22 @@ static NSDictionary *RKConnectionAttributeValuesWithObject(RKConnectionDescripti
         } else {
             if ([managedObjects count] > 1) RKLogWarning(@"Retrieved %ld objects satisfying connection criteria for one-to-one relationship connection: only one object will be connected.", (long) [managedObjects count]);
             if ([managedObjects count]) connectionResult = [managedObjects anyObject];
+            
+            // If we didn't find anything but there is an existing relationship and that relationship has no keys, then keep it (offline mode)
+            if (!connectionResult)
+            {
+                [self.managedObjectContext performBlockAndWait:^{
+                    NSManagedObject *linkedObject = [self.managedObject valueForKeyPath:connection.relationship.name];
+                    *shouldConnectRelationship = linkedObject ? NO : YES;
+/*                    for (NSString *sourceAttribute in connection.attributes) {
+                        NSString *destinationAttribute = (connection.attributes)[sourceAttribute];
+                        id destinationValue = [linkedObject valueForKey:destinationAttribute];
+                        if (destinationValue)
+                            foundValue = YES;
+                    }*/
+                }];
+               // *shouldConnectRelationship = foundValue;
+            }
         }
     } else if ([connection isKeyPathConnection]) {
         connectionResult = [self.managedObject valueForKeyPath:connection.keyPath];
