@@ -681,7 +681,7 @@ BOOL RKDoesArrayOfResponseDescriptorsContainOnlyEntityMappings(NSArray *response
 
     if (self.targetObjectID) {
         // 2xx/404/410 DELETE request, proceed with deletion from the MOC
-        __block NSError *_blockError = nil;
+        __block NSError *_blockError = *error;
         [self.privateContext performBlockAndWait:^{
             NSManagedObject *backgroundThreadObject = [self.privateContext existingObjectWithID:self.targetObjectID error:&_blockError];
             if (backgroundThreadObject) {
@@ -691,7 +691,6 @@ BOOL RKDoesArrayOfResponseDescriptorsContainOnlyEntityMappings(NSArray *response
                 RKLogWarning(@"Unable to delete object sent with `DELETE` request: Failed to retrieve object with objectID %@", self.targetObjectID);
                 RKLogCoreDataError(_blockError);
                 _blockSuccess = NO;
-                *error = _blockError;
             }
         }];
     }
