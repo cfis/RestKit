@@ -89,7 +89,9 @@ static NSTimeInterval const kAFRKNetworkActivityIndicatorInvisibilityDelay = 0.1
 }
 
 - (BOOL)isNetworkActivityIndicatorVisible {
-    return _activityCount > 0;
+    @synchronized(self) {
+        return _activityCount > 0;
+    }
 }
 
 - (void)updateNetworkActivityIndicatorVisibility {
